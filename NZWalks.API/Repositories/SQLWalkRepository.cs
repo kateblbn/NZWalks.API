@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using NZWalks.API.Data;
 using NZWalks.API.Models.Domain;
 
@@ -19,9 +20,18 @@ namespace NZWalks.API.Repositories
             return walk;
         }
 
-        public async Task<List<Walk>> GetAllAsync()
+        public async Task<List<Walk>> GetAllAsync(string? filterOn = null, string? filterQuery = null)
         {
-           return await dbContext.Walks.Include(x => x.Difficulty).Include(x => x.Region).ToListAsync();   
+            var walk = dbContext.Walks.Include(x => x.Difficulty).Include(x => x.Region).AsQueryable();
+            // filtering
+            if (string.IsNullOrWhiteSpace(filterOn) == false && string.IsNullOrWhiteSpace(filterQuery) == false) { 
+                if (filterOn.Equals("Name", StringComparison.OrdinalIgnoreCase))
+                {
+                    walk = walk.Where(x => x.Name.Contains(filterQuery));
+                }
+            }
+
+           return await walk.ToListAsync();   
         }
 
         public async Task<Walk?> GetByIdAsync(Guid id)
